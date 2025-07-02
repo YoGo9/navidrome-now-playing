@@ -1,1 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Now Playing - Navidrome</title>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      color: #4caf50;
+      margin: 0;
+    }
+    
+    .settings-btn {
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+      color: #eee;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.2s;
+    }
+    
+    .settings-btn:hover {
+      background-color: #2a2a2a;
+    }
+    
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .status-connected {
+      background-color: #4caf50;
+    }
+    
+    .status-disconnected {
+      background-color: #f44336;
+    }
+    
 
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .card {
+      background-color: #1a1a1a;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .cover {
+      width: 100%;
+      height: 0;
+      padding-bottom: 100%;
+      background-size: cover;
+      background-position: center;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      background-color: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: #666;
+      position: relative;
+    }
+    
+    .info {
+      width: 100%;
+    }
+    
+    .info strong {
+      color: #90caf9;
+    }
+    
+    .user {
+      color: #4caf50;
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 16px;
+    }
+    
+    .info div {
+      margin-bottom: 4px;
+    }
+    
+    .metadata {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #333;
+      font-size: 12px;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    
+    .progress-bar {
+      background: #333;
+      height: 4px;
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .progress-fill {
+      background: linear-gradient(90deg, #4caf50, #45a049);
+      height: 100%;
+      transition: width 0.3s ease;
+      border-radius: 2px;
+    }
+    
+    .time-info {
+      font-size: 12px;
+      color: #4caf50;
+      margin-top: 4px;
+      font-weight: bold;
+    }
+    
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      justify-content: center;
+    }
+    
+    .badge {
+      background-color: #333;
+      color: #eee;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .badge.player {
+      background-color: #2196f3;
+    }
+    
+    .badge.quality {
+      background-color: #ff9800;
+    }
+    
+    .badge.popular {
+      background-color: #e91e63;
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+      background-color: #1a1a1a;
+      margin: 10% auto;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+    }
+    
+    .modal h2 {
+      color: #4caf50;
+      margin-top: 0;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: #90caf9;
+      font-weight: 500;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background-color: #0d0d0d;
+      color: #eee;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #4caf50;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 25px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: #4caf50;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #45a049;
+    }
+    
+    .btn-secondary {
+      background-color: #333;
+      color: #eee;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #444;
+    }
+    
+    .btn-test {
+      background-color: #2196f3;
+      color: white;
+    }
+    
+    .btn-test:hover {
+      background-color: #1976d2;
+    }
+    
+    .btn-clear {
+      background-color: #f44336;
+      color: white;
+    }
+    
+    .btn-clear:hover {
+      background-color: #d32f2f;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .spinner {
+      border: 2px solid #333;
+      border-top: 2px solid #4caf50;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+    
+    .error-state {
+      text-align: center;
+      padding: 40px;
+      color: #f44336;
+    }
+    
+    .test-status {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      text-align: center;
+    }
+    
+    .test-success {
+      background-color: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+      border: 1px solid #4caf50;
+    }
+    
+    .test-error {
+      background-color: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+      border: 1px solid #f44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Now Playing</h1>
+    <button class="settings-btn" onclick="openSettings()">
+      <span class="status-indicator" id="status-indicator"></span>
+      ⚙️ Settings
+    </button>
+  </div>
+  
+  <div class="grid" id="now-playing">
+    <div class="loading">
+      <div class="spinner"></div>
+      Loading...
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <h2>Navidrome Settings</h2>
+      <form id="settingsForm">
+        <div class="form-group">
+          <label for="serverUrl">Server URL</label>
+          <input type="url" id="serverUrl" placeholder="https://your-navidrome-server.com" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Your username" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Your password" required>
+        </div>
+        
+        <div id="testStatus" class="test-status" style="display: none;"></div>
+        
+        <div class="button-group">
+          <button type="button" class="btn btn-test" onclick="testConnection()">Test Connection</button>
+          <button type="button" class="btn btn-clear" onclick="clearSettings()">Clear</button>
+          <button type="button" class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let updateInterval;
+    
+    // Modal functions - defined first so they're available for HTML onclick
+    function openSettings() {
+      const settings = loadSettings();
+      if (settings) {
+        document.getElementById('serverUrl').value = settings.serverUrl;
+        document.getElementById('username').value = settings.username;
+        document.getElementById('password').value = settings.password;
+      }
+      document.getElementById('settingsModal').style.display = 'block';
+      document.getElementById('testStatus').style.display = 'none';
+    }
+    
+    function closeSettings() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
+    
+    function clearSettings() {
+      if (confirm('Are you sure you want to clear all settings? This will remove your saved credentials.')) {
+        clearStoredSettings();
+        document.getElementById('settingsForm').reset();
+        document.getElementById('testStatus').style.display = 'none';
+        updateStatusIndicator(false);
+        loadNowPlaying();
+      }
+    }
+    
+    function testConnection() {
+      const serverUrl = document.getElementById('serverUrl').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const testStatus = document.getElementById('testStatus');
+      
+      if (!serverUrl || !username || !password) {
+        showTestStatus('Please fill in all fields', false);
+        return;
+      }
+      
+      showTestStatus('Testing connection...', null);
+      
+      // Simple test - just try to ping the server
+      const testUrl = `${serverUrl.replace(/\/$/, '')}/rest/ping?u=${username}&p=${password}&v=1.16.1&c=nowplaying&f=json`;
+      
+      fetch(testUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (data['subsonic-response']?.status === 'ok') {
+            showTestStatus('Connection successful!', true);
+          } else {
+            showTestStatus(data['subsonic-response']?.error?.message || 'Connection failed', false);
+          }
+        })
+        .catch(error => {
+          showTestStatus('Connection failed: ' + error.message, false);
+        });
+    }
+    
+    function showTestStatus(message, success) {
+      const testStatus = document.getElementById('testStatus');
+      testStatus.style.display = 'block';
+      testStatus.textContent = message;
+      testStatus.className = 'test-status';
+      
+      if (success === true) {
+        testStatus.classList.add('test-success');
+      } else if (success === false) {
+        testStatus.classList.add('test-error');
+      }
+    }
+    
+    // Settings management
+    function loadSettings() {
+      const settings = localStorage.getItem('navidromeSettings');
+      return settings ? JSON.parse(settings) : null;
+    }
+    
+    function saveSettings(serverUrl, username, password) {
+      const settings = {
+        serverUrl: serverUrl.replace(/\/$/, ''), // Remove trailing slash
+        username,
+        password
+      };
+      
+      localStorage.setItem('navidromeSettings', JSON.stringify(settings));
+      return settings;
+    }
+    
+    function clearStoredSettings() {
+      localStorage.removeItem('navidromeSettings');
+    }
+    
+    // API functions - simplified without MD5 hashing
+    function buildApiUrl(endpoint, settings) {
+      return `${settings.serverUrl}/rest/${endpoint}?u=${settings.username}&p=${settings.password}&v=1.16.1&c=nowplaying&f=json`;
+    }
+    
+    // Utility functions
+    function formatTime(minutesAgo) {
+      if (minutesAgo === 0) return 'Just started';
+      if (minutesAgo === 1) return '1 minute ago';
+      return `${minutesAgo} minutes ago`;
+    }
+    
+    function formatDuration(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    
+    function calculateProgress(minutesAgo, duration) {
+      const elapsedSeconds = minutesAgo * 60;
+      return Math.min((elapsedSeconds / duration) * 100, 100);
+    }
+    
+    // Status indicator
+    function updateStatusIndicator(connected) {
+      const indicator = document.getElementById('status-indicator');
+      indicator.className = 'status-indicator ' + (connected ? 'status-connected' : 'status-disconnected');
+    }
+    
+
+    
+    // Main data loading
+    async function loadNowPlaying() {
+      const settings = loadSettings();
+      const container = document.getElementById('now-playing');
+      
+      if (!settings) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">⚙️</div>
+            <h3>Setup Required</h3>
+            <p>Please configure your Navidrome server settings to get started.</p>
+          </div>
+        `;
+        updateStatusIndicator(false);
+        openSettings();
+        return;
+      }
+      
+      updateStatusIndicator(true);
+      
+      try {
+        const apiUrl = buildApiUrl('getNowPlaying', settings);
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        if (data['subsonic-response']?.status !== 'ok') {
+          throw new Error(data['subsonic-response']?.error?.message || 'API Error');
+        }
+        
+        const entries = data['subsonic-response']?.nowPlaying?.entry || [];
+        
+        if (entries.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">🎵</div>
+              <h3>All Quiet</h3>
+              <p>No users are currently playing anything.</p>
+            </div>
+          `;
+          return;
+        }
+        
+        container.innerHTML = "";
+        entries.forEach(entry => {
+          const coverUrl = entry.coverArt 
+            ? `${settings.serverUrl}/rest/getCoverArt?id=${entry.coverArt}&u=${settings.username}&p=${settings.password}&v=1.16.1&c=nowplaying`
+            : null;
+          
+          const progress = calculateProgress(entry.minutesAgo, entry.duration);
+          
+          const card = document.createElement("div");
+          card.className = "card";
+          
+          card.innerHTML = `
+            <div class="cover" ${coverUrl ? `style="background-image: url('${coverUrl}');"` : ''}>
+              ${!coverUrl ? '🎵' : ''}
+            </div>
+            <div class="info">
+              <div class="user">${entry.username || '—'}</div>
+              <div><strong>Title:</strong> ${entry.title || '—'}</div>
+              <div><strong>Artist:</strong> ${entry.artist || '—'}</div>
+              <div><strong>Album:</strong> ${entry.album || '—'}</div>
+              
+              <div class="time-info">${formatTime(entry.minutesAgo)}</div>
+              
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${progress}%"></div>
+              </div>
+              
+              <div class="badges">
+                <span class="badge player">${entry.playerName || 'Unknown'}</span>
+                <span class="badge">${formatDuration(entry.duration)}</span>
+                ${entry.year ? `<span class="badge">${entry.year}</span>` : ''}
+              </div>
+            </div>
+          `;
+          
+          container.appendChild(card);
+        });
+        
+      } catch (error) {
+        console.error('Error loading now playing:', error);
+        container.innerHTML = `
+          <div class="error-state">
+            <h3>Connection Error</h3>
+            <p>Failed to load data: ${error.message}</p>
+            <p>Please check your settings and try again.</p>
+          </div>
+        `;
+        updateStatusIndicator(false);
+      }
+    }
+    
+    // Auto-refresh
+    function startAutoRefresh() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+      updateInterval = setInterval(loadNowPlaying, 10000); // Refresh every 10 seconds
+    }
+    
+    function stopAutoRefresh() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+    }
+    
+    // Form handling
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('settingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const serverUrl = document.getElementById('serverUrl').value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        if (!serverUrl || !username || !password) {
+          showTestStatus('Please fill in all fields', false);
+          return;
+        }
+        
+        saveSettings(serverUrl, username, password);
+        closeSettings();
+        updateStatusIndicator(true);
+        loadNowPlaying();
+      });
+      
+      // Close modal when clicking outside
+      window.onclick = function(event) {
+        const modal = document.getElementById('settingsModal');
+        if (event.target === modal) {
+          closeSettings();
+        }
+      }
+      
+      // Initialize
+      loadNowPlaying();
+      startAutoRefresh();
+    });
+  </script>
+</body>
+</html>
