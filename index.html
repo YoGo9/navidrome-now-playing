@@ -198,6 +198,29 @@
       background-color: #e91e63;
     }
     
+    .mb-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      padding: 4px 8px;
+      background-color: #2a2a2a;
+      border-radius: 6px;
+      color: #ba8eff;
+      text-decoration: none;
+      font-size: 11px;
+      transition: background-color 0.2s;
+    }
+    
+    .mb-link:hover {
+      background-color: #333;
+      color: #d4b3ff;
+    }
+    
+    .mb-link:active {
+      background-color: #3a3a3a;
+    }
+    
     /* Modal styles */
     .modal {
       display: none;
@@ -599,9 +622,24 @@
       return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
     
-    function calculateProgress(minutesAgo, duration) {
+    function calculateProgress(minutesAgo, duration, bookmarkPosition) {
+      // If we have bookmarkPosition (in milliseconds), use it for accuracy
+      if (bookmarkPosition !== undefined && bookmarkPosition !== null) {
+        const elapsedSeconds = bookmarkPosition / 1000;
+        return Math.min((elapsedSeconds / duration) * 100, 100);
+      }
+      // Fallback to minutesAgo estimate
       const elapsedSeconds = minutesAgo * 60;
       return Math.min((elapsedSeconds / duration) * 100, 100);
+    }
+    
+    function formatProgress(bookmarkPosition, duration) {
+      // If we have bookmarkPosition, show actual time
+      if (bookmarkPosition !== undefined && bookmarkPosition !== null) {
+        const elapsed = Math.floor(bookmarkPosition / 1000);
+        return `${formatDuration(elapsed)} / ${formatDuration(duration)}`;
+      }
+      return null;
     }
     
     // Status indicator
@@ -658,10 +696,16 @@
             ? `${settings.serverUrl}/rest/getCoverArt?id=${entry.coverArt}&u=${settings.username}&p=${settings.password}&v=1.16.1&c=nowplaying`
             : null;
           
-          const progress = calculateProgress(entry.minutesAgo, entry.duration);
+          const progress = calculateProgress(entry.minutesAgo, entry.duration, entry.bookmarkPosition);
+          const progressText = formatProgress(entry.bookmarkPosition, entry.duration);
           
           const card = document.createElement("div");
           card.className = "card";
+          
+          // Build MusicBrainz link if available
+          const mbLink = entry.musicBrainzId 
+            ? `<a href="https://musicbrainz.org/recording/${entry.musicBrainzId}" target="_blank" rel="noopener noreferrer" class="mb-link">🎵 MusicBrainz</a>`
+            : '';
           
           card.innerHTML = `
             <div class="cover" ${coverUrl ? `style="background-image: url('${coverUrl}');"` : ''}>
@@ -678,12 +722,15 @@
               <div class="progress-bar">
                 <div class="progress-fill" style="width: ${progress}%"></div>
               </div>
+              ${progressText ? `<div class="time-info" style="margin-top: 4px;">${progressText}</div>` : ''}
               
               <div class="badges">
                 <span class="badge player">${entry.playerName || 'Unknown'}</span>
                 <span class="badge">${formatDuration(entry.duration)}</span>
                 ${entry.year ? `<span class="badge">${entry.year}</span>` : ''}
               </div>
+              
+              ${mbLink}
             </div>
           `;
           
